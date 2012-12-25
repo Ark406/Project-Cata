@@ -1,0 +1,2 @@
+DELETE FROM`playercreateinfo_spell`WHERE`Spell`=94098; 
+INSERT INTO`playercreateinfo_spell`(`race`,`class`,`Spell`,`Note`) VALUES (22,0,94098,'Running Wild'); 
