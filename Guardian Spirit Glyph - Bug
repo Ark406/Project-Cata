@@ -1,0 +1,10 @@
+when u have glyph of guardian spirit, your guardian spirit (holy talent), will be bugged, when you use guardian spirit, after the "proc", is over it will get resetted, and cooldown for it, will be refreshed, you can either set the required level to 90, to "block" it, or disable it. I dont have a fix for it atm.
+Query for disabling it:
+ 
+REPLACE INTO `disables` VALUES (0, 45755, 0, '', '', 'Guardian Spirit (spell) - Priest');
+ 
+
+If that doesn't work ^^, set the required level to 90. You can do it by running this query:
+ REPLACE INTO `Item_template` SET requiredlevel = 90;
+
+ 
