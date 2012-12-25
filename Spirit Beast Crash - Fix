@@ -1,0 +1,1 @@
+REPLACE INTO `disables` VALUES (0, 82899, 1, '', '', 'crash talent (spell) - Hunter'); 
