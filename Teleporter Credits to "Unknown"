@@ -1,0 +1,570 @@
+-- -------------------------------------------------------------------------
+-- ---- IMPORTANT: ONLY SET THESE VARIABLES, DO NOT TOUCH THE REST!!!! -----
+-- -------------------------------------------------------------------------
+-- Set all the important variables for the database
+-- Replace xxx with a value (number)
+-- NPC
+SET @Entry := xxx; -- Creature Entry (need 1)
+SET @Text := xxx; -- Gossip Texts (need 6)
+-- Gossip
+SET @Main := xxx; -- Main gossip entry on creature (need 13)
+-- Smart_script
+SET @Script := xxx ; -- scriptid iterator (need 84)
+-- Conditional values
+SET @Money_C := xxx ; -- How much users have to pay to travel to MAIN CITIES (in copper, set 0 for free usage)
+SET @Money_T1 := xxx ; -- How much users have to pay to travel to TOWNS_TBC (in copper, set 0 for free usage)
+SET @Money_T2 := xxx ; -- How much users have to pay to travel to TOWNS_WOTLK (in copper, set 0 for free usage)
+SET @Money_A := xxx ; -- How much users have to pay to travel to ARENAS (in copper, set 0 for free usage)
+SET @Money_I1 := xxx ; -- How much users have to pay to travel to DUNGEONS<60 (in copper, set 0 for free usage)
+SET @Money_I2 := xxx ; -- How much users have to pay to travel to DUNGEONS_TBC (in copper, set 0 for free usage)
+SET @Money_I3 := xxx ; -- How much users have to pay to travel to DUNGEONS_WOLTK (in copper, set 0 for free usage)
+SET @Money_R1 := xxx ; -- How much users have to pay to travel to RAIDS<60 (in copper, set 0 for free usage)
+SET @Money_R2 := xxx ; -- How much users have to pay to travel to RAIDS_TBC (in copper, set 0 for free usage)
+SET @Money_R3 := xxx ; -- How much users have to pay to travel to RAIDS_WOLTK (in copper, set 0 for free usage)
+-- --------------------------------------------------------------------------
+-- ------- STOP HERE -- STOP HERE -- STOP HERE -- STOP HERE -- STOP HERE ----
+-- --------------------------------------------------------------------------
+ 
+-- ---------------------------------------------------------------------------
+-- ------- DONT TOUCH THESE ----- DONT TOUCH THESE ----- DONT TOUCH THESE ----
+-- ---------------------------------------------------------------------------
+SET @Sub_Cities := @Main+1; -- Submenu: Cities
+SET @Sub_Towns_BC := @Main+2; -- Submenu: Burning Crusade Towns
+SET @Sub_Towns_WOTLK := @Main+3; -- Submenu: Wrath of Lich King Towns
+SET @Sub_Arenas := @Main+4; -- Submenu: Arenas
+SET @Sub_Instance1 := @Main+5; -- Submenu: Instances level 1-60
+SET @Sub_Instance1_EK := @Main+6; -- Submenu: Instances level 1-60 Eastern Kingdoms
+SET @Sub_Instance1_K := @Main+7; -- Submenu: Instances level 1-60 Kalimdor
+SET @Sub_Instance2 := @Main+8; -- Submenu: Instances level 60-70
+SET @Sub_Instance3 := @Main+9; -- Submenu: Instances level 70+
+SET @Sub_Raid60 := @Main+10; -- Submenu: Raids level 60
+SET @Sub_Raid70 := @Main+11; -- Submenu: Raids level 70
+SET @Sub_Raid80 := @Main+12; -- Submenu: Raids level 80
+SET @Script_Cities := @Scripts ; -- Submenu Scripts: Cities (need 10)
+SET @Script_Towns := @Scripts+10 ; -- Submenu Scripts: Towns (need 21)
+SET @Script_Arenas := @Scripts+32 ; -- Submenu Scripts: Arenas (need 4)
+SET @Script_Instances := @Scripts+36 ; -- Submenu Scripts: Instances (need 31)
+SET @Script_Raids := @Scripts+68 ; -- Submenu Scripts: Raids (need 16)
+SET @ID := 0; -- iterator for script-subid
+SET @opt := 0; -- Iterator for gossip_menu.option_id
+-- Creature Definition
+DELETE FROM `creature_template` WHERE `entry`=@Entry;
+INSERT INTO creature_template (`entry`,`difficulty_entry_1`,`difficulty_entry_2`,`difficulty_entry_3`,`KillCredit1`,`KillCredit2`,`modelid1`,`modelid2`,`modelid3`,`modelid4`,`name`,`subname`,`IconName`,`gossip_menu_id`,`minlevel`,`maxlevel`,`exp`,`faction_A`,`faction_H`,`npcflag`,`speed_walk`,`speed_run`,`scale`,`rank`,`mindmg`,`maxdmg`,`dmgschool`,`attackpower`,`dmg_multiplier`,`baseattacktime`,`rangeattacktime`,`unit_class`,`unit_flags`,`dynamicflags`,`family`,`trainer_type`,`trainer_spell`,`trainer_class`,`trainer_race`,`minrangedmg`,`maxrangedmg`,`rangedattackpower`,`type`,`type_flags`,`lootid`,`pickpocketloot`,`skinloot`,`resistance1`,`resistance2`,`resistance3`,`resistance4`,`resistance5`,`resistance6`,`spell1`,`spell2`,`spell3`,`spell4`,`spell5`,`spell6`,`spell7`,`spell8`,`PetSpellDataId`,`VehicleId`,`mingold`,`maxgold`,`AIName`,`MovementType`,`InhabitType`,`Health_mod`,`Mana_mod`,`Armor_mod`,`RacialLeader`,`questItem1`,`questItem2`,`questItem3`,`questItem4`,`questItem5`,`questItem6`,`movementId`,`RegenHealth`,`equipment_id`,`mechanic_immune_mask`,`flags_extra`,`ScriptName`,`WDBVerified`) VALUES
+(@Entry,0,0,0,0,0,29984,0,0,0, 'Teleporter Mage', 'Teleporting since preBC', '',@Main,80,80,2,35,35,1,1,1.14286,1,0,346,499,0,287,1,0,0,8,512,8,0,0,0,0,0,315,468,69,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, '',0,3,10,10,1,0,0,0,0,0,0,0,0,1,0,0,0, '',0);
+-- Text in Menus
+DELETE FROM `npc_text` WHERE `ID` BETWEEN @Text AND @Text+5 ;
+INSERT INTO `npc_text` (`ID`, `text0_0`) VALUES
+(@Text, 'Select a Category.'),
+(@Text+1, 'Select a City'),
+(@Text+2, 'Select a Town'),
+(@Text+3, 'Select an Arena'),
+(@Text+4, 'Select an Instance'),
+(@Text+5, 'Select a Raid Location');
+ 
+-- Gossip Menu Definition
+DELETE FROM `gossip_menu` WHERE `entry` BETWEEN @Main AND @Main+12;
+INSERT INTO gossip_menu (`entry`, `text_id`) VALUES
+(@Main,@Text), -- "Select a Category"
+(@Sub_Cities,@Text+1), -- "Select a City"
+(@Sub_Towns_BC,@Text+2), -- "Select a Town"
+(@Sub_Towns_WOTLK,@Text+2), -- "Select a Town"
+(@Sub_Arenas,@Text+3), -- "Select an Arena"
+(@Sub_Instance1,@Text+4), -- "Select an Instance"
+(@Sub_Instance2,@Text+4), -- "Select an Instance"
+(@Sub_Instance3,@Text+4), -- "Select an Instance"
+(@Sub_Raid60,@Text+5), -- "Select a Raid Location"
+(@Sub_Raid70,@Text+5), -- "Select a Raid Location"
+(@Sub_Raid80,@Text+5); -- "Select a Raid Location"
+-- ----------------------------------------
+-- ---- Gossip Menu Options Definition ----
+-- ----------------------------------------
+DELETE FROM `gossip_menu_option` WHERE `menu_id` BETWEEN @Main AND @Main+12 ;
+INSERT INTO gossip_menu_option (`menu_id`,`id`,`option_icon`,`option_text`,`option_id`,`npc_option_npcflag`,`action_menu_id`,`action_poi_id`,`box_coded`,`box_money`,`box_text`) VALUES
+-- -----------------
+-- -- Main Window --
+-- -----------------
+(@Main,0,0, 'Azeroth Cities',1,1,@Sub_Cities,0,0,0, ''),
+(@Main,1,0, 'Outland Towns',1,1,@Sub_Towns_BC,0,0,0, ''),
+(@Main,2,0, 'Northrend Towns',1,1,@Sub_Towns_WOTLK,0,0,0, ''),
+(@Main,3,0, 'Arenas',1,1,@Sub_Arenas,0,0,0, ''),
+(@Main,4,0, 'Azeroth Instances',1,1,@Sub_Instance1,0,0,0, ''),
+(@Main,5,0, 'Outland Instances',1,1,@Sub_Instance2,0,0,0, ''),
+(@Main,6,0, 'Northrend Instances',1,1,@Sub_Instance3,0,0,0, ''),
+(@Main,7,0, 'Azeroth Raids',1,1,@Sub_Raid60,0,0,0, ''),
+(@Main,8,0, 'Outland Raids',1,1,@Sub_Raid70,0,0,0, ''),
+(@Main,9,0, 'Northrend Raids',1,1,@Sub_Raid80,0,0,0, ''),
+-- --------------------
+-- -- Cities Submenu --
+-- --------------------
+(@Sub_Cities,0,0, 'What other locations can you teleport me to?',1,1,@Main,0,0,0, ''),
+(@Sub_Cities,1,2, 'Teleport me to Dalaran please',1,1,0,0,0,@Money_C, 'Are you sure you wish to visit Dalaran?'),
+(@Sub_Cities,2,2, 'Teleport me to Stormwind',1,1,0,0,0,@Money_C, 'Are you sure you wish to visit Stormwind?'),
+(@Sub_Cities,3,2, 'Teleport me to Ironforge',1,1,0,0,0,@Money_C, 'Are you sure you wish to visit Ironforge'),
+(@Sub_Cities,4,2, 'Teleport me to Darnassus',1,1,0,0,0,@Money_C, 'Are you sure you wish to visit Darnassus?'),
+(@Sub_Cities,5,2, 'Teleport me to Exodar',1,1,0,0,0,@Money_C, 'Are you sure you wish to visit Exodar?'),
+(@Sub_Cities,6,2, 'Teleport me to Orgrimmar',1,1,0,0,0,@Money_C, 'Are you sure you wish to visit Orgrimmar?'),
+(@Sub_Cities,7,2, 'Teleport me to Undercity',1,1,0,0,0,@Money_C, 'Are you sure you wish to visit Undercity?'),
+(@Sub_Cities,8,2, 'Teleport me to ThunderBluff',1,1,0,0,0,@Money_C, 'Are you sure you wish to visit Thunder Bluff?'),
+(@Sub_Cities,9,2, 'Teleport me to Silvermoon',1,1,0,0,0,@Money_C, 'Are you sure you wish to visit Silvermoon City?'),
+(@Sub_Cities,10,2, 'Teleport me to Shattrath',1,1,0,0,0,@Money_C, 'Are you sure you wish to visit Shattrath?'),
+-- -----------------------------------
+-- -- Burning Crusade Towns Submenu --
+-- -----------------------------------
+(@Sub_Towns_BC,0,0, 'What other locations can you teleport me to?',1,1,@Main,0,0,0, ''),
+-- Ally
+(@Sub_Towns_BC,1,2, 'Teleport me to Honor Hold please',1,1,0,0,0,@Money_T1, 'Are you sure you wish to visit Honor Hold?'),
+(@Sub_Towns_BC,2,2, 'Teleport me to Telaar please',1,1,0,0,0,@Money_T1, 'Are you sure you wish to visit Telaar?'),
+(@Sub_Towns_BC,3,2, 'Teleport me to Sylvanaar please',1,1,0,0,0,@Money_T1, 'Are you sure you wish to visit Sylvanaar?'),
+(@Sub_Towns_BC,4,2, 'Teleport me to Wildhammer Stronghold please',1,1,0,0,0,@Money_T1, 'Are you sure you wish to visit Wildhammer Stronghold?'),
+-- Horde
+(@Sub_Towns_BC,5,2, 'Teleport me to Thunderlord Stronghold please',1,1,0,0,0,@Money_T1, 'Are you sure you wish to visit Thunderlord Stronghold?'),
+(@Sub_Towns_BC,6,2, 'Teleport me to Thrallmar please',1,1,0,0,0,@Money_T1, 'Are you sure you wish to visit Thrallmar?'),
+(@Sub_Towns_BC,7,2, 'Teleport me to Garadar please',1,1,0,0,0,@Money_T1, 'Are you sure you wish to visit Garadar?'),
+(@Sub_Towns_BC,8,2, 'Teleport me to Shadowmoon Village please',1,1,0,0,0,@Money_T1, 'Are you sure you wish to visit Shadowmoon Village?'),
+-- Neutral
+(@Sub_Towns_BC,9,2, 'Teleport me to Cenarion Refuge please',1,1,0,0,0,@Money_T1, 'Are you sure you wish to visit Cenarion Refuge?'),
+(@Sub_Towns_BC,10,2, 'Teleport me to Ruuan Weald please',1,1,0,0,0,@Money_T1, 'Are you sure you wish to visit Ruuan Weald?'),
+(@Sub_Towns_BC,11,2, 'Teleport me to Area52 please',1,1,0,0,0,@Money_T1, 'Are you sure you wish to visit Area52?'),
+-- --------------------------------------
+-- -- Wrath of Lich King Towns Submenu --
+-- --------------------------------------
+(@Sub_Towns_WOTLK,0,0, 'What other locations can you teleport me to?',1,1,@Main,0,0,0, ''),
+-- Ally
+(@Sub_Towns_WOTLK,1,2, 'Teleport me to Valiance Keep please',1,1,0,0,0,@Money_T2, 'Are you sure you wish to visit Valiance Keep?'),
+(@Sub_Towns_WOTLK,2,2, 'Teleport me to Westguard Keep please',1,1,0,0,0,@Money_T2, 'Are you sure you wish to visit Westguard Keep?'),
+(@Sub_Towns_WOTLK,3,2, 'Teleport me to Wintergarde Keep please',1,1,0,0,0,@Money_T2, 'Are you sure you wish to visit Wintergarde Keep?'),
+(@Sub_Towns_WOTLK,4,2, 'Teleport me to Amberpine Lodge please',1,1,0,0,0,@Money_T2, 'Are you sure you wish to visit Amberpine Lodge?'),
+-- Horde
+(@Sub_Towns_WOTLK,5,2, 'Teleport me to Warsong Hold please',1,1,0,0,0,@Money_T2, 'Are you sure you wish to visit Warsong Hold?'),
+(@Sub_Towns_WOTLK,6,2, 'Teleport me to Vengeance Landing please',1,1,0,0,0,@Money_T2, 'Are you sure you wish to visit Vengeance Landing?'),
+(@Sub_Towns_WOTLK,7,2, 'Teleport me to Agmars Hammer please',1,1,0,0,0,@Money_T2, 'Are you sure you wish to visit Agmars Hammer?'),
+(@Sub_Towns_WOTLK,8,2, 'Teleport me to Conquest Hold please',1,1,0,0,0,@Money_T2, 'Are you sure you wish to visit Conquest Hold?'),
+-- Neutral
+(@Sub_Towns_WOTLK,9,2, 'Teleport me to Wyrmrest Temple please',1,1,0,0,0,@Money_T2, 'Are you sure you wish to visit Wyrmrest Temple?'),
+(@Sub_Towns_WOTLK,10,2, 'Teleport me to The Argent Stand please',1,1,0,0,0,@Money_T2, 'Are you sure you wish to visit The Argent Stand?'),
+(@Sub_Towns_WOTLK,11,2, 'Teleport me to The Argent Tournament please',1,1,0,0,0,@Money_T2, 'Are you sure you wish to visit The Argent Tournament?'),
+-- -------------------
+-- -- Arena Submenu --
+-- -------------------
+(@Sub_Arenas,0,0, 'What other locations can you teleport me to?',1,1,@Main,0,0,0, ''),
+-- Arenas
+(@Sub_Arenas,1,2, 'Teleport me to Dire Maul Arena please',1,1,0,0,0,@Money_A, 'Are you sure you wish to visit the Dire Maul Arena?'),
+(@Sub_Arenas,2,2, 'Teleport me to Gurubashi Arena please',1,1,0,0,0,@Money_A, 'Are you sure you wish to visit the Gurubashi Arena?'),
+(@Sub_Arenas,3,2, 'Teleport me to the Circle of Blood Arena please',1,1,0,0,0,@Money_A, 'Are you sure you wish to visit the Circle of Blood Arena?'),
+(@Sub_Arenas,4,2, 'Teleport me to the Ring of Trials Arena please',1,1,0,0,0,@Money_A, 'Are you sure you wish to visit the Ring of Trials Arena?'),
+-- ----------------------------
+-- -- Dungeons 1-60 Submenu --
+-- ----------------------------
+(@Sub_Instance1,0,2, 'What other locations can you teleport me to?',1,1,@Main,0,0,0, ''),
+(@Sub_Instance1,1,2, 'I want to go to Eastern Kingdoms Instances',1,1,@Sub_Instance1_EK,0,0,0, ''),
+(@Sub_Instance1,2,2, 'I want to go to Kalimdor Instances',1,1,@Sub_Instance1_K,0,0,0, ''),
+-- Eastern Kingdoms
+(@Sub_Instance1_EK,0,2, 'What other locations can you teleport me to?',1,1,@Sub_Instance1,0,0,0, ''),
+-- Dungeons_Eastern Kingdoms
+(@Sub_Instance1_EK,1,2, 'Teleport me to Deadmines please',1,1,0,0,0,@Money_I1, 'Are you sure you wish to visit the Deadmines?'),
+(@Sub_Instance1_EK,2,2, 'Teleport me to Stormwind Stockades please',1,1,0,0,0,@Money_I1, 'Are you sure you wish to visit the Stormwind Stockades?'),
+(@Sub_Instance1_EK,3,2, 'Teleport me to Gnomeregan please',1,1,0,0,0,@Money_I1, 'Are you sure you wish to visit Gnomeregan?'),
+(@Sub_Instance1_EK,4,2, 'Teleport me to Scarlet Monestry please',1,1,0,0,0,@Money_I1, 'Are you sure you wish to visit the Scarlet Monestry?'),
+(@Sub_Instance1_EK,5,2, 'Teleport me to Uldaman please',1,1,0,0,0,@Money_I1, 'Are you sure you wish to visit Uldaman?'),
+(@Sub_Instance1_EK,6,2, 'Teleport me to Scholomance please',1,1,0,0,0,@Money_I1, 'Are you sure you wish to visit Scholomance?'),
+(@Sub_Instance1_EK,7,2, 'Teleport me to Stratholme please',1,1,0,0,0,@Money_I1, 'Are you sure you wish to visit Stratholme?'),
+(@Sub_Instance1_EK,8,2, 'Teleport me to Blackrock Mountain please',1,1,0,0,0,@Money_I1, 'Are you sure you wish to visit Blackrock Mountain?'),
+(@Sub_Instance1_EK,9,2, 'Teleport me to Sunken Temple please',1,1,0,0,0,@Money_I1, 'Are you sure you wish to visit Sunken Temple?'),
+-- Kalimdor
+(@Sub_Instance1_K,0,2, 'What other locations can you teleport me to?',1,1,@Sub_Instance1,0,0,0, ''),
+-- Dungeons_Kalimdor
+(@Sub_Instance1_K,1,2, 'Teleport me to Ragefire Chasm please',1,1,0,0,0,@Money_I1, 'Are you sure you wish to visit Ragefire Chasm?'),
+(@Sub_Instance1_K,2,2, 'Teleport me to Wailing Caverns please',1,1,0,0,0,@Money_I1, 'Are you sure you wish to visit the Wailing Caverns?'),
+(@Sub_Instance1_K,3,2, 'Teleport me to Blackfathom Deeps please',1,1,0,0,0,@Money_I1, 'Are you sure you wish to visit Blackfathom Deeps?'),
+(@Sub_Instance1_K,4,2, 'Teleport me to Shadowfang Keep please',1,1,0,0,0,@Money_I1, 'Are you sure you wish to visit Shadowfang Keep?'),
+(@Sub_Instance1_K,5,2, 'Teleport me to Razorfen Kraul please',1,1,0,0,0,@Money_I1, 'Are you sure you wish to visit Razorfen Kraul?'),
+(@Sub_Instance1_K,6,2, 'Teleport me to Maraudon please',1,1,0,0,0,@Money_I1, 'Are you sure you wish to visit Maraudon?'),
+(@Sub_Instance1_K,7,2, 'Teleport me to Dire Maul please',1,1,0,0,0,@Money_I1, 'Are you sure you wish to visit Dire Maul?'),
+(@Sub_Instance1_K,8,2, 'Teleport me to Razorfen Downs please',1,1,0,0,0,@Money_I1, 'Are you sure you wish to visit Razorfen Downs?'),
+(@Sub_Instance1_K,9,2, 'Teleport me to Zul Farrak please',1,1,0,0,0,@Money_I1, 'Are you sure you wish to visit Zul Farrak?'),
+-- ----------------------------
+-- -- Dungeons 60-70 Submenu --
+-- ----------------------------
+(@Sub_Instance2,0,2, 'What other locations can you teleport me to?',1,1,@Main,0,0,0, ''),
+-- Dungeons
+(@Sub_Instance2,1,2, 'Teleport me to Hellfire Citadel please',1,1,0,0,0,@Money_I2, 'Are you sure you wish to visit Hellfire Citadel?'),
+(@Sub_Instance2,2,2, 'Teleport me to Coilfang Reservoir please',1,1,0,0,0,@Money_I2, 'Are you sure you wish to visit the Coilfang Reservoir?'),
+(@Sub_Instance2,3,2, 'Teleport me to Auchindoun please',1,1,0,0,0,@Money_I2, 'Are you sure you wish to visit Auchindoun?'),
+(@Sub_Instance2,4,2, 'Teleport me to The Tempest Keep please',1,1,0,0,0,@Money_I2, 'Are you sure you wish to visit the Tempest Keep?'),
+(@Sub_Instance2,5,2, 'Teleport me to Caverns of Time please',1,1,0,0,0,@Money_I2, 'Are you sure you wish to visit the Caverns of Time?'),
+(@Sub_Instance2,6,2, 'Teleport me to Magisters Terrace please',1,1,0,0,0,@Money_I2, 'Are you sure you wish to visit Magisters Terrace?'),
+-- ----------------------------
+-- -- Dungeons 70-80 Submenu --
+-- ----------------------------
+(@Sub_Instance3,0,2, 'What other locations can you teleport me to?',1,1,@Main,0,0,0, ''),
+-- Dungeons
+(@Sub_Instance3,1,2, 'Teleport me to Utguarde please',1,1,0,0,0,@Money_I3, 'Are you sure you wish to visit Utguarde?'),
+(@Sub_Instance3,2,2, 'Teleport me to The Nexus please',1,1,0,0,0,@Money_I3, 'Are you sure you wish to visit the Nexus?'),
+(@Sub_Instance3,3,2, 'Teleport me to Pit of Narjun please',1,1,0,0,0,@Money_I3, 'Are you sure you wish to visit Pit of Narjun?'),
+(@Sub_Instance3,4,2, 'Teleport me to Drak tharon please',1,1,0,0,0,@Money_I3, 'Are you sure you wish to visit Drak tharon?'),
+(@Sub_Instance3,5,2, 'Teleport me to Gundrak please',1,1,0,0,0,@Money_I3, 'Are you sure you wish to visit Gundrak?'),
+(@Sub_Instance3,6,2, 'Teleport me to Halls of Lightning and Stone please',1,1,0,0,0,@Money_I3, 'Are you sure you wish to visit Halls of Lightning/Stone?'),
+(@Sub_Instance3,7,2, 'Teleport me to Culling of Stratholme please',1,1,0,0,0,@Money_I3, 'Are you sure you wish to visit Culling of Stratholme?'),
+(@Sub_Instance3,8,2, 'Teleport me to Upper Icecrown Citadel please',1,1,0,0,0,@Money_I3, 'Are you sure you wish to visit Upper Icecrown Citadel?'),
+-- -------------------
+-- -- Azeroth Raids --
+-- -------------------
+(@Sub_Raid60,0,2, 'What other locations can you teleport me to?',1,1,@Main,0,0,0, ''),
+-- Raids
+(@Sub_Raid60,1,2, 'Teleport me to the Molten Core please' ,1,1,0,0,0,@Money_R1, 'Are you sure you wish to visit Molten Core?'),
+(@Sub_Raid60,2,2, 'Teleport me to Ahn Qiraj 20 please',1,1,0,0,0,@Money_R1, 'Are you sure you wish to visit Ahn Qiraj 20?'),
+(@Sub_Raid60,3,2, 'Teleport me to Ahn Qiraj 40 please',1,1,0,0,0,@Money_R1, 'Are you sure you wish to visit Ahn Qiraj 40?'),
+(@Sub_Raid60,4,2, 'Teleport me to Zul Gurub please',1,1,0,0,0,@Money_R1, 'Are you sure you wish to visit Zul Gurub?'),
+-- -------------------
+-- -- Outland Raids --
+-- -------------------
+(@Sub_Raid70,0,2, 'What other locations can you teleport me to?',1,1,@Main,0,0,0, ''),
+-- Raids
+(@Sub_Raid70,1,2, 'Teleport me to the Black Temple please',1,1,0,0,0,@Money_R2, 'Are you sure you wish to visit Black Temple?'),
+(@Sub_Raid70,2,2, 'Teleport me to Zul Aman please',1,1,0,0,0,@Money_R2, 'Are you sure you wish to visit Zul Aman?'),
+(@Sub_Raid70,3,2, 'Teleport me to Karazhan please',1,1,0,0,0,@Money_R2, 'Are you sure you wish to visit Karazhan?'),
+(@Sub_Raid70,4,2, 'Teleport me to the Tempest Keep please',1,1,0,0,0,@Money_R2, 'Are you sure you wish to visit Tempest Keep?'),
+(@Sub_Raid70,5,2, 'Teleport me to Gruuls Lair please' ,1,1,0,0,0,@Money_R2, 'Are you sure you wish to visit Gruuls Lair?'),
+-- ---------------------
+-- -- Northrend Raids --
+-- ---------------------
+(@Sub_Raid80,0,2, 'What other locations can you teleport me to?',1,1,@Main,0,0,0, ''),
+-- Raids
+(@Sub_Raid80,1,2, 'Teleport me to Naxxramas please',1,1,0,0,0,@Money_R3, 'Are you sure you wish to visit Naxxramas?'),
+(@Sub_Raid80,2,2, 'Teleport me to the Eye of Eternity please',1,1,0,0,0,@Money_R3, 'Are you sure you wish to visit the Eye of Eternity?'),
+(@Sub_Raid80,3,2, 'Teleport me to the Obsidian Sanctuary please',1,1,0,0,0,@Money_R3, 'Are you sure you wish to visit the Obsidian Sanctuary?'),
+(@Sub_Raid80,4,2, 'Teleport me to Onyxias Lair please',1,1,0,0,0,@Money_R3, 'Are you sure you wish to visit Onyxias Lair?'),
+(@Sub_Raid80,5,2, 'Teleport me to Ulduar please',1,1,0,0,0,@Money_R3, 'Are you sure you wish to visit Ulduar?'),
+(@Sub_Raid80,6,2, 'Teleport me to the Ruby Sanctorum please',1,1,0,0,0,@Money_R3, 'Are you sure you wish to visit the Ruby Sanctorum?'),
+(@Sub_Raid80,7,2, 'Teleport me to the Icecrown Citadel please',1,1,0,0,0,@Money_R3, 'Are you sure you wish to visit the Icecrown Citadel?');
+-- -------------
+-- -- Scripts --
+-- -------------
+-- IMPORTANT FOR SAI:
+UPDATE `creature_template` SET `AIName`= 'SmartAI' WHERE `entry`= @Entry;
+DELETE FROM `smart_scripts` WHERE `entryorguid` BETWEEN @Script AND @Script+83 AND`source_type`=9;
+DELETE FROM `smart_scripts` WHERE `entryorguid`=@Entry AND `source_type` IN (0,9);
+INSERT INTO `smart_scripts`
+(`entryorguid`,`source_type`,`id`,`link`,`event_type`,`event_phase_mask`,`event_chance`,`event_flags`,`event_param1`,`event_param2`,`event_param3`,`event_param4`,`action_type`,`action_param1`,`action_param2`,`action_param3`,`action_param4`,`action_param5`,`action_param6`,`target_type`,`target_param1`,`target_param2`,`target_param3`,`target_x`,`target_y`,`target_z`,`target_o`,`comment`)
+VALUES
+-- ------------------
+-- -- Initialising --
+-- -------------------------------------------------------------------------------------------------------------------------------------------
+(@Entry,0,@ID+0,0,62,0,100,0,@Sub_Cities,@opt+1 ,0,0,80,@Script ,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+1,0,62,0,100,0,@Sub_Cities,@opt+2 ,0,0,80,@Script+1,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+2,0,62,0,100,0,@Sub_Cities,@opt+3 ,0,0,80,@Script+2,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+3,0,62,0,100,0,@Sub_Cities,@opt+4 ,0,0,80,@Script+3,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+4,0,62,0,100,0,@Sub_Cities,@opt+5 ,0,0,80,@Script+4,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+5,0,62,0,100,0,@Sub_Cities,@opt+6 ,0,0,80,@Script+5,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+6,0,62,0,100,0,@Sub_Cities,@opt+7 ,0,0,80,@Script+6,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+7,0,62,0,100,0,@Sub_Cities,@opt+8 ,0,0,80,@Script+7,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+8,0,62,0,100,0,@Sub_Cities,@opt+9 ,0,0,80,@Script+8,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+9,0,62,0,100,0,@Sub_Cities,@opt+10,0,0,80,@Script+9,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+-- ------------------------------------------------------------------------------------------------------------------------------------------
+(@Entry,0,@ID+10,0,62,0,100,0,@Sub_Towns_BC,@opt+1 ,0,0,80,@Script+10,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+11,0,62,0,100,0,@Sub_Towns_BC,@opt+2 ,0,0,80,@Script+11,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+12,0,62,0,100,0,@Sub_Towns_BC,@opt+3 ,0,0,80,@Script+12,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+13,0,62,0,100,0,@Sub_Towns_BC,@opt+4 ,0,0,80,@Script+13,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+14,0,62,0,100,0,@Sub_Towns_BC,@opt+5 ,0,0,80,@Script+14,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+15,0,62,0,100,0,@Sub_Towns_BC,@opt+6 ,0,0,80,@Script+15,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+16,0,62,0,100,0,@Sub_Towns_BC,@opt+7 ,0,0,80,@Script+16,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+17,0,62,0,100,0,@Sub_Towns_BC,@opt+8 ,0,0,80,@Script+17,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+18,0,62,0,100,0,@Sub_Towns_BC,@opt+9 ,0,0,80,@Script+18,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+19,0,62,0,100,0,@Sub_Towns_BC,@opt+10,0,0,80,@Script+19,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+20,0,62,0,100,0,@Sub_Towns_BC,@opt+11,0,0,80,@Script+20,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+-- ------------------------------------------------------------------------------------------------------------------------------------------
+(@Entry,0,@ID+21,0,62,0,100,0,@Sub_Towns_WOTLK,@opt+1 ,0,0,80,@Script+21,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+22,0,62,0,100,0,@Sub_Towns_WOTLK,@opt+2 ,0,0,80,@Script+22,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+23,0,62,0,100,0,@Sub_Towns_WOTLK,@opt+3 ,0,0,80,@Script+23,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+24,0,62,0,100,0,@Sub_Towns_WOTLK,@opt+4 ,0,0,80,@Script+24,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+25,0,62,0,100,0,@Sub_Towns_WOTLK,@opt+5 ,0,0,80,@Script+25,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+26,0,62,0,100,0,@Sub_Towns_WOTLK,@opt+6 ,0,0,80,@Script+26,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+27,0,62,0,100,0,@Sub_Towns_WOTLK,@opt+7 ,0,0,80,@Script+27,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+28,0,62,0,100,0,@Sub_Towns_WOTLK,@opt+8 ,0,0,80,@Script+28,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+29,0,62,0,100,0,@Sub_Towns_WOTLK,@opt+9 ,0,0,80,@Script+29,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+30,0,62,0,100,0,@Sub_Towns_WOTLK,@opt+10,0,0,80,@Script+30,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+31,0,62,0,100,0,@Sub_Towns_WOTLK,@opt+11,0,0,80,@Script+31,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+-- ------------------------------------------------------------------------------------------------------------------------------------------
+(@Entry,0,@ID+32,0,62,0,100,0,@Sub_Arenas,@opt+1,0,0,80,@Script+32,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+33,0,62,0,100,0,@Sub_Arenas,@opt+2,0,0,80,@Script+33,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+34,0,62,0,100,0,@Sub_Arenas,@opt+3,0,0,80,@Script+34,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+35,0,62,0,100,0,@Sub_Arenas,@opt+4,0,0,80,@Script+35,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+-- ------------------------------------------------------------------------------------------------------------------------------------------
+(@Entry,0,@ID+36,0,62,0,100,0,@Sub_Instance1_EK,@opt+1 ,0,0,80,@Script+36,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+37,0,62,0,100,0,@Sub_Instance1_EK,@opt+2 ,0,0,80,@Script+37,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+38,0,62,0,100,0,@Sub_Instance1_EK,@opt+3 ,0,0,80,@Script+38,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+39,0,62,0,100,0,@Sub_Instance1_EK,@opt+4 ,0,0,80,@Script+39,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+40,0,62,0,100,0,@Sub_Instance1_EK,@opt+5 ,0,0,80,@Script+40,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+41,0,62,0,100,0,@Sub_Instance1_EK,@opt+6 ,0,0,80,@Script+41,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+42,0,62,0,100,0,@Sub_Instance1_EK,@opt+7 ,0,0,80,@Script+42,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+43,0,62,0,100,0,@Sub_Instance1_EK,@opt+8 ,0,0,80,@Script+43,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+44,0,62,0,100,0,@Sub_Instance1_EK,@opt+9 ,0,0,80,@Script+44,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+-- ------------------------------------------------------------------------------------------------------------------------------------------
+(@Entry,0,@ID+45,0,62,0,100,0,@Sub_Instance1_K,@opt+1,0,0,80,@Script+45,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+46,0,62,0,100,0,@Sub_Instance1_K,@opt+2,0,0,80,@Script+46,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+47,0,62,0,100,0,@Sub_Instance1_K,@opt+3,0,0,80,@Script+47,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+48,0,62,0,100,0,@Sub_Instance1_K,@opt+4,0,0,80,@Script+48,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+49,0,62,0,100,0,@Sub_Instance1_K,@opt+5,0,0,80,@Script+49,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+50,0,62,0,100,0,@Sub_Instance1_K,@opt+6,0,0,80,@Script+50,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+51,0,62,0,100,0,@Sub_Instance1_K,@opt+7,0,0,80,@Script+51,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+52,0,62,0,100,0,@Sub_Instance1_K,@opt+8,0,0,80,@Script+52,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+53,0,62,0,100,0,@Sub_Instance1_K,@opt+9,0,0,80,@Script+53,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+-- ------------------------------------------------------------------------------------------------------------------------------------------
+(@Entry,0,@ID+54,0,62,0,100,0,@Sub_Instance2,@opt+1,0,0,80,@Script+54,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+55,0,62,0,100,0,@Sub_Instance2,@opt+2,0,0,80,@Script+55,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+56,0,62,0,100,0,@Sub_Instance2,@opt+3,0,0,80,@Script+56,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+57,0,62,0,100,0,@Sub_Instance2,@opt+4,0,0,80,@Script+57,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+58,0,62,0,100,0,@Sub_Instance2,@opt+5,0,0,80,@Script+58,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+59,0,62,0,100,0,@Sub_Instance2,@opt+6,0,0,80,@Script+59,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+-- ------------------------------------------------------------------------------------------------------------------------------------------
+(@Entry,0,@ID+60,0,62,0,100,0,@Sub_Instance3,@opt+1,0,0,80,@Script+60,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+61,0,62,0,100,0,@Sub_Instance3,@opt+2,0,0,80,@Script+61,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+62,0,62,0,100,0,@Sub_Instance3,@opt+3,0,0,80,@Script+62,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+63,0,62,0,100,0,@Sub_Instance3,@opt+4,0,0,80,@Script+63,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+64,0,62,0,100,0,@Sub_Instance3,@opt+5,0,0,80,@Script+64,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+65,0,62,0,100,0,@Sub_Instance3,@opt+6,0,0,80,@Script+65,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+66,0,62,0,100,0,@Sub_Instance3,@opt+7,0,0,80,@Script+66,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+67,0,62,0,100,0,@Sub_Instance3,@opt+8,0,0,80,@Script+67,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+-- ------------------------------------------------------------------------------------------------------------------------------------------
+(@Entry,0,@ID+68,0,62,0,100,0,@Sub_Raid60,@opt+1,0,0,80,@Script+68,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+69,0,62,0,100,0,@Sub_Raid60,@opt+2,0,0,80,@Script+69,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+70,0,62,0,100,0,@Sub_Raid60,@opt+3,0,0,80,@Script+70,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+71,0,62,0,100,0,@Sub_Raid60,@opt+4,0,0,80,@Script+71,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+-- ------------------------------------------------------------------------------------------------------------------------------------------
+(@Entry,0,@ID+72,0,62,0,100,0,@Sub_Raid70,@opt+1,0,0,80,@Script+72,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+73,0,62,0,100,0,@Sub_Raid70,@opt+2,0,0,80,@Script+73,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+74,0,62,0,100,0,@Sub_Raid70,@opt+3,0,0,80,@Script+74,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+75,0,62,0,100,0,@Sub_Raid70,@opt+4,0,0,80,@Script+75,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+76,0,62,0,100,0,@Sub_Raid70,@opt+5,0,0,80,@Script+76,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+-- ------------------------------------------------------------------------------------------------------------------------------------------
+(@Entry,0,@ID+77,0,62,0,100,0,@Sub_Raid80,@opt+1,0,0,80,@Script+77,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+78,0,62,0,100,0,@Sub_Raid80,@opt+2,0,0,80,@Script+78,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+79,0,62,0,100,0,@Sub_Raid80,@opt+3,0,0,80,@Script+79,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+80,0,62,0,100,0,@Sub_Raid80,@opt+4,0,0,80,@Script+80,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+81,0,62,0,100,0,@Sub_Raid80,@opt+5,0,0,80,@Script+81,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+82,0,62,0,100,0,@Sub_Raid80,@opt+6,0,0,80,@Script+82,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+(@Entry,0,@ID+83,0,62,0,100,0,@Sub_Raid80,@opt+7,0,0,80,@Script+83,0,0,0,0,0,1,0,0,0,0,0,0,0, 'On gossip option select run teleport script'),
+-- ------------------------------------------------------------------------------------------------------------------------------------------
+-- -- ActionScripts --
+-- ------------------------------------------------------------------------------------------------------------------------------------------
+-- Cities
+(@Script+00,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+00,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,5804,625,647.768,1.64, 'script - teleport to Dalaran'),
+(@Script+01,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+01,9,1,0,0,0,100,0,1500,1500,0,0,62,0,0,0,0,0,0,0,8,0,0,-9004,870,29.621,2.25, 'script - teleport to Stormwind'),
+(@Script+02,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+02,9,1,0,0,0,100,0,1500,1500,0,0,62,0,0,0,0,0,0,0,8,0,0,-4918.88,-940.406,501.564,5.42347, 'script - teleport to Ironforge'),
+(@Script+03,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+03,9,1,0,0,0,100,0,1500,1500,0,0,62,1,0,0,0,0,0,0,8,0,0,9660.810,2513.640,1331.66,3.06, 'script - teleport to Darnassus'),
+(@Script+04,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+04,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,-4030.000,-11572.000,-138.296,2.43, 'script - teleport to Exodar'),
+(@Script+05,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+05,9,1,0,0,0,100,0,1500,1500,0,0,62,1,0,0,0,0,0,0,8,0,0,1469.850,-4221.520,58.9939,5.98, 'script - teleport to Orgrimmar'),
+(@Script+06,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+06,9,1,0,0,0,100,0,1500,1500,0,0,62,0,0,0,0,0,0,0,8,0,0,1773.470,61.121,-46.32,2.32443, 'script - teleport to Undercity'),
+(@Script+07,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+07,9,1,0,0,0,100,0,1500,1500,0,0,62,1,0,0,0,0,0,0,8,0,0,-964.980,283.433,111.187,3.02, 'script - teleport to ThunderBluff'),
+(@Script+08,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+08,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,9998.490,-7106.780,47.7055,2.44, 'script - teleport to SilvermoonCity'),
+(@Script+09,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+09,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,-1838.160,5301.790,-12.428,5.95, 'script - teleport to Shattrath'),
+-- Towns TBC
+(@Script+10,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+10,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,-748.211,2681.52,100.35,5.7479, 'script - teleport to Honor Hold'),
+(@Script+11,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+11,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,-2560.76,7300.72,13.9485,2.18422, 'script - teleport to Telaar'),
+(@Script+12,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+12,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,2018.91,6854.47,171.409,0.087216, 'script - teleport to Sylvanaar'),
+(@Script+13,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+13,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,-3989.47,2168.39,105.35,3.08422, 'script - teleport to Wildhammer Stronghold'),
+(@Script+14,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+14,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,2314.75,6041.96,142.417,6.24317, 'script - teleport to Thunderlord Stronghold'),
+(@Script+15,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+15,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,156.251,2673.45,85.1587,0.382074, 'script - teleport to Thrallmar'),
+(@Script+16,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+16,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,-1321.34,7239.12,32.7371,4.04169, 'script - teleport to Garadar'),
+(@Script+17,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+17,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,-2998.66,2568.9,76.6306,0.551303, 'script - teleport to Shadowmoon Village'),
+(@Script+18,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+18,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,-223.541,5487.99,23.2281,0.886755, 'script - teleport to Cenarion Refuge'),
+(@Script+19,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+19,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,2964.84,5663.43,146.879,5.89082, 'script - teleport to Ruuan Weald'),
+(@Script+20,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+20,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,3043.33,3681.33,143.065,5.07464, 'script - teleport to Area52'),
+-- Towns WOTLK
+(@Script+21,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+21,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,2213.95,5273.15,11.2565,5.89294, 'script - teleport to Valliance Keep'),
+(@Script+22,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+22,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,1391.04,-3284.63,163.929,1.59391, 'script - teleport to Westguard Keep'),
+(@Script+23,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+23,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,3682.71,-722.635,212.729,5.7991, 'script - teleport to Wintergarde Keep'),
+(@Script+24,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+24,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,3412.88,-2791.17,201.521,2.2458, 'script - teleport to Amberpine Lodge'),
+(@Script+25,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+25,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,2741.29,6097.16,76.9055,0.731543, 'script - teleport to Warsong Hold'),
+(@Script+26,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+26,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,1942.86,-6167.11,23.724,2.64258, 'script - teleport to Vengeance Landing'),
+(@Script+27,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+27,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,3834.80,1544.01,89.73,0.25, 'script - teleport to Agmars Hammer'),
+(@Script+28,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+28,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,3249.58,-2254.53,114.65,1.21, 'script - teleport to Conquest Hold'),
+(@Script+29,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+29,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,3546.02,278.09,45.60,4.85, 'script - teleport to Wyrmrest Temple'),
+(@Script+30,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+30,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,5451.05,-2597.77,306.622,4.67, 'script - teleport to The Argent Stand'),
+(@Script+31,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+31,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,8515.89,629.25,547.396,1.5747, 'script - teleport to The Argent Tournament'),
+-- Arenas
+(@Script+32,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+32,9,1,0,0,0,100,0,1500,1500,0,0,62,1,0,0,0,0,0,0,8,0,0,-3761.49,1133.43,132.083,4.57259, 'script - teleport to Dire Maul Arena'),
+(@Script+33,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+33,9,1,0,0,0,100,0,1500,1500,0,0,62,0,0,0,0,0,0,0,8,0,0,-13277.4,127.372,26.1418,1.11878, 'script - teleport to Gurubashi Arena'),
+(@Script+34,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+34,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,2839.44,5930.17,11.1002,3.16284, 'script - teleport to Circle of Blood Arena'),
+(@Script+35,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+35,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,-1999.94,6581.71,11.32,2.3, 'script - teleport to Ring of Trials Arena'),
+-- Dungeons Eastern Kingdoms
+(@Script+36,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+36,9,1,0,0,0,100,0,1500,1500,0,0,62,0,0,0,0,0,0,0,8,0,0,-11208.7,1673.52,24.6361,1.51067, 'script - teleport to Deadmines'),
+(@Script+37,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+37,9,1,0,0,0,100,0,1500,1500,0,0,62,0,0,0,0,0,0,0,8,0,0,-8779.10,834.91,94.315,0.66, 'script - teleport to Stormwind Stockades'),
+(@Script+38,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+38,9,1,0,0,0,100,0,1500,1500,0,0,62,0,0,0,0,0,0,0,8,0,0,-5163.54,925.423,257.181,1.57423, 'script - teleport to Gnomeregan'),
+(@Script+39,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+39,9,1,0,0,0,100,0,1500,1500,0,0,62,0,0,0,0,0,0,0,8,0,0,2872.6,-764.398,160.332,5.05735, 'script - teleport to Scarlet Monestry'),
+(@Script+40,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+40,9,1,0,0,0,100,0,1500,1500,0,0,62,0,0,0,0,0,0,0,8,0,0,-6071.37,-2955.16,209.782,0.015708, 'script - teleport to Uldaman'),
+(@Script+41,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+41,9,1,0,0,0,100,0,1500,1500,0,0,62,0,0,0,0,0,0,0,8,0,0,1269.64,-2556.21,93.6088,0.620623, 'script - teleport to Scholomance'),
+(@Script+42,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+42,9,1,0,0,0,100,0,1500,1500,0,0,62,0,0,0,0,0,0,0,8,0,0,3352.92,-3379.03,144.782,6.25978, 'script - teleport to Stratholme'),
+(@Script+43,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+43,9,1,0,0,0,100,0,1500,1500,0,0,62,0,0,0,0,0,0,0,8,0,0,-7494.94,-1123.49,265.547,3.3092, 'script - teleport to Blackrock Mountain'),
+(@Script+44,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+44,9,1,0,0,0,100,0,1500,1500,0,0,62,0,0,0,0,0,0,0,8,0,0,-10177.9,-3994.9,-111.239,6.01885, 'script - teleport to Sunken Temple'),
+-- Dungeons Kalimdor
+(@Script+45,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+45,9,1,0,0,0,100,0,1500,1500,0,0,62,1,0,0,0,0,0,0,8,0,0,1811.78,-4410.5,-18.4704,5.20165, 'script - teleport to Ragefire Chasm'),
+(@Script+46,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+46,9,1,0,0,0,100,0,1500,1500,0,0,62,1,0,0,0,0,0,0,8,0,0,-731.607,-2218.39,17.0281,2.78486, 'script - teleport to Wailing Caverns'),
+(@Script+47,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+47,9,1,0,0,0,100,0,1500,1500,0,0,62,1,0,0,0,0,0,0,8,0,0,4249.99,740.102,-25.671,1.34, 'script - teleport to Blackfathom Deeps'),
+(@Script+48,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+48,9,1,0,0,0,100,0,1500,1500,0,0,62,1,0,0,0,0,0,0,8,0,0,-234.675,1561.63,76.8921,1.24031, 'script - teleport to Shadowfang Keep'),
+(@Script+49,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+49,9,1,0,0,0,100,0,1500,1500,0,0,62,1,0,0,0,0,0,0,8,0,0,-4470.28,-1677.77,81.3925,1.16302, 'script - teleport to Razorfen Kraul'),
+(@Script+50,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+50,9,1,0,0,0,100,0,1500,1500,0,0,62,1,0,0,0,0,0,0,8,0,0,-1419.13,2908.14,137.464,1.57366, 'script - teleport to Maraudon'),
+(@Script+51,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+51,9,1,0,0,0,100,0,1500,1500,0,0,62,1,0,0,0,0,0,0,8,0,0,-3981.01,1129.61,161.03,0.05, 'script - teleport to Dire Maul'),
+(@Script+52,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+52,9,1,0,0,0,100,0,1500,1500,0,0,62,1,0,0,0,0,0,0,8,0,0,-4657.3,-2519.35,81.0529,4.54808, 'script - teleport to Razorfen Downs'),
+(@Script+53,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+53,9,1,0,0,0,100,0,1500,1500,0,0,62,1,0,0,0,0,0,0,8,0,0,-6801.19,-2893.02,9.00388,0.158639, 'script - teleport to Zul Farrak'),
+-- Dungeons TBC
+(@Script+54,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+54,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,-390.863,3130.64,4.51327,0.218692, 'script - teleport to Hellfire Citadel'),
+(@Script+55,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+55,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,735.066,6883.45,-66.2913,5.89172, 'script - teleport to Coilfang Reservoir'),
+(@Script+56,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+56,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,-3324.49,4943.45,-101.239,4.63901, 'script - teleport to Auchindoun'),
+(@Script+57,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+57,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,2988.21,1806.9,139.071,3.8591, 'script - teleport to Tempest Keep'),
+(@Script+58,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+58,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,-8167.25,-4766.05,33.86,4.96, 'script - teleport to Caverns of Time'),
+(@Script+59,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+59,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,12884.6,-7317.69,65.5023,4.799, 'script - teleport to Magister Terrace'),
+-- Dungeons WOTLK
+(@Script+60,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+60,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,1259.33,-4852.02,215.763,3.48293, 'script - teleport to Utgarde'),
+(@Script+61,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+61,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,3781.81,6953.65,104.82,0.467432, 'script - teleport to The Nexus'),
+(@Script+62,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+62,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,3707.86,2150.23,36.76,3.22, 'script - teleport to Pit of Narjun'),
+(@Script+63,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+63,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,4774.6,-2032.92,229.15,1.59, 'script - teleport to DrakTharon Keep'),
+(@Script+64,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+64,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,6898.72,-4584.94,451.12,2.34455, 'script - teleport to Gundrak'),
+(@Script+65,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+65,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,9049.37,-1282.35,1060.19,5.8395, 'script - teleport to Halls of Stone/Lightning'),
+(@Script+66,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+66,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,-8671.37,-4398.26,-207.01,3.44, 'script - teleport to Culling of Stratholme'),
+(@Script+67,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+67,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,5635.06,2052.08,798.05,4.68, 'script - teleport to Halls of Reflection'),
+-- Raids lvl 60
+(@Script+68,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+68,9,1,0,0,0,100,0,1500,1500,0,0,62,230,0,0,0,0,0,0,8,0,0,1121.45,-454.317,-101.33,3.5, 'script - teleport to Molten Core'),
+(@Script+69,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+69,9,1,0,0,0,100,0,1500,1500,0,0,62,1,0,0,0,0,0,0,8,0,0,-8409.03,1498.83,27.3615,2.49757, 'script - teleport to AQ20'),
+(@Script+70,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+70,9,1,0,0,0,100,0,1500,1500,0,0,62,1,0,0,0,0,0,0,8,0,0,-8245.84,1983.74,129.072,0.936195, 'script - teleport to AQ40'),
+(@Script+71,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+71,9,1,0,0,0,100,0,1500,1500,0,0,62,0,0,0,0,0,0,0,8,0,0,-11916.7,-1212.82,92.2868,4.6095, 'script - teleport to Zul Gurub'),
+-- Raids lvl 70
+(@Script+72,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+72,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,-3610.72,324.988,37.4,3.28298, 'script - teleport to Black Temple'),
+(@Script+73,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+73,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,6846.95,-7954.5,170.028,4.61501, 'script - teleport to Zul Aman'),
+(@Script+74,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+74,9,1,0,0,0,100,0,1500,1500,0,0,62,0,0,0,0,0,0,0,8,0,0,-11118.8,-2010.84,47.0807,0, 'script - teleport to Karazhan'),
+(@Script+75,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+75,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,3089.58,1399.05,187.653,4.79407, 'script - teleport to Tempest Keep'),
+(@Script+76,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+76,9,1,0,0,0,100,0,1500,1500,0,0,62,530,0,0,0,0,0,0,8,0,0,3539.01,5082.36,1.69107,0, 'script - teleport to Gruuls Lair'),
+-- Raids lvl 80
+(@Script+77,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+77,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,3668.72,-1262.46,243.622,4.785, 'script - teleport to Naxxramas'),
+(@Script+78,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+78,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,3857.17,6990.71,152.10,5.87, 'script - teleport to Eye of Eternity'),
+(@Script+79,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+79,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,3516.08,269.89,-114.035,3.23, 'script - teleport to The Obsidian Sanctuary'),
+(@Script+80,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+80,9,1,0,0,0,100,0,1500,1500,0,0,62,1,0,0,0,0,0,0,8,0,0,-4708.27,-3727.64,54.5589,3.72786, 'script - teleport to Onyxias Lair'),
+(@Script+81,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+81,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,9049.37,-1282.35,1060.19,5.8395, 'script - teleport to Ulduar'),
+(@Script+82,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+82,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,3598.44,198.52,-110.85,2.22, 'script - teleport to Ruby Sanctum'),
+(@Script+83,9,0,0,0,0,100,0,0,0,0,0,85,35517,2,0,0,0,0,0,1,0,0,0,0,0,0, 'script - cast Visual on player'),
+(@Script+83,9,1,0,0,0,100,0,1500,1500,0,0,62,571,0,0,0,0,0,0,8,0,0,5873.82,2110.98,636.011,3.5523, 'script - teleport to Icecrown Citadel');
+-- ----------------
+-- -- Conditions --
+-- ----------------
+DELETE FROM `conditions` WHERE `SourceTypeOrReferenceId`=15 AND `SourceGroup` BETWEEN @Main AND @Main+12;
+INSERT INTO conditions (`SourceTypeOrReferenceId`, `SourceGroup`, `SourceEntry`, `ElseGroup`, `ConditionTypeOrReference`, `ConditionValue1`, `ConditionValue2`, `ConditionValue3`, `ErrorTextId`, `ScriptName`, `Comment`) VALUES
+-- Main Menu:
+(15,@Main,1,0,27,55,3,0,0, '', 'Level 55+ Outland Towns'),
+(15,@Main,2,0,27,70,3,0,0, '', 'Level 70+ Northrend Towns'),
+(15,@Main,5,0,27,55,3,0,0, '', 'Level 55+ Outland Dungeons'),
+(15,@Main,6,0,27,55,3,0,0, '', 'Level 70+ Northrend Dungeons'),
+(15,@Main,7,0,27,60,3,0,0, '', 'Level 60+ Azeroth Raids'),
+(15,@Main,8,0,27,70,3,0,0, '', 'Level 70+ Outland Raids'),
+(15,@Main,9,0,27,80,3,0,0, '', 'Level 80+ Northrend Raids'),
+-- Submenu: Cities
+(15,@Sub_Cities,1,0,27,70,3,0,0, '', 'Level 70+ Dalaran'),
+(15,@Sub_Cities,2,0,6,469,0,0,0, '', 'Ally: Stormwind'),
+(15,@Sub_Cities,3,0,6,469,0,0,0, '', 'Ally: Ironforge'),
+(15,@Sub_Cities,4,0,6,469,0,0,0, '', 'Ally: Darnassus'),
+(15,@Sub_Cities,5,0,6,469,0,0,0, '', 'Ally: Exodar'),
+(15,@Sub_Cities,6,0,6,67,0,0,0, '', 'Horde: Orgrimmar'),
+(15,@Sub_Cities,7,0,6,67,0,0,0, '', 'Horde: Undercity'),
+(15,@Sub_Cities,8,0,6,67,0,0,0, '', 'Horde: ThunderBluff'),
+(15,@Sub_Cities,9,0,6,67,0,0,0, '', 'Horde: Silvermoon'),
+(15,@Sub_Cities,10,0,27,60,3,0,0, '', 'Level 60+ Shattrath'),
+-- Submenu: Towns BC
+(15,@Sub_Towns_BC,1,0,6,469,0,0,0, '', 'Ally: Honor Hold'),
+(15,@Sub_Towns_BC,2,0,6,469,0,0,0, '', 'Ally: Telaar'),
+(15,@Sub_Towns_BC,3,0,6,469,0,0,0, '', 'Ally: Sylvanaar'),
+(15,@Sub_Towns_BC,4,0,6,469,0,0,0, '', 'Ally: Wildhammer Stronghold'),
+(15,@Sub_Towns_BC,5,0,6,67,0,0,0, '', 'Horde: Thunderlord Stronghold'),
+(15,@Sub_Towns_BC,6,0,6,67,0,0,0, '', 'Horde: Thrallmar'),
+(15,@Sub_Towns_BC,7,0,6,67,0,0,0, '', 'Horde: Garadar'),
+(15,@Sub_Towns_BC,8,0,6,67,0,0,0, '', 'Horde: Shadowmoon Village'),
+-- Submenu: Towns WOTLK
+(15,@Sub_Towns_WOTLK,1,0,6,469,0,0,0, '', 'Ally: Valiance Keep'),
+(15,@Sub_Towns_WOTLK,2,0,6,469,0,0,0, '', 'Ally: Westguard Keep'),
+(15,@Sub_Towns_WOTLK,3,0,6,469,0,0,0, '', 'Ally: Wintergarde Keep'),
+(15,@Sub_Towns_WOTLK,4,0,6,469,0,0,0, '', 'Ally: Amberpine Lodge'),
+(15,@Sub_Towns_WOTLK,5,0,6,67,0,0,0, '', 'Horde: Warsong Hold'),
+(15,@Sub_Towns_WOTLK,6,0,6,67,0,0,0, '', 'Horde: Vengeance Landing'),
+(15,@Sub_Towns_WOTLK,7,0,6,67,0,0,0, '', 'Horde: Agmars Hammer'),
+(15,@Sub_Towns_WOTLK,8,0,6,67,0,0,0, '', 'Horde: Conquest Hold');
