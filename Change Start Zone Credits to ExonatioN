@@ -1,0 +1,6 @@
+UPDATE playercreateinfo SET `map` = 'MapID' ;
+UPDATE playercreateinfo SET `zone` = 'ZoneID' ;
+UPDATE playercreateinfo SET `position_x` = 'X' ;
+UPDATE playercreateinfo SET `position_y` = 'Y' ;
+UPDATE playercreateinfo SET `position_z` = 'Z' ;
+UPDATE playercreateinfo SET `orientation` = 'O' ;
