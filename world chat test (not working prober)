@@ -1,0 +1,46 @@
+#include "ScriptPCH.h"
+
+#define MSG_COLOR_RED "|cffff0000"
+#define MSG_COLOR_BLUE "|cff0000ff"
+
+class world_chat : public CommandScript
+{
+    public:
+		world_chat() : public CommandScript("world_chat") { }
+
+		ChatCommand * GetCommands() const
+		{
+			static ChatCommand worldCommandTable[] =
+			{
+				{ "world",    SEC_PLAYER,     false, &HandleWorldCommand,   "", NULL },
+				{ NULL,       0,              false, NULL,                  "", NULL }
+			};
+			return worldCommandTable;
+		}
+
+		static bool HandleWorldChatCommand(ChatHandler * handler, char const * args)
+		{
+			if(!*args)
+				return false;
+
+			Player * player = handler ->GetSession() ->GetPlayer();
+			char msg[300];
+
+			switch(player ->GetSession() -> GetSecruity())
+			{
+			    case SEC_PLAYER:
+					snprintf(msg, 300, "[Player][%s]: %s%s|r", player ->GetName(), MSG_COLOR_RED, args;
+					sWorld ->SendGlobalText(msg, NULL);
+					break;
+
+				case SEC_GAMEMASTER:
+				snprintf(msg, 300, "[GM][%s]: %s%s|r", player ->GetName(), MSG_COLOR_BLUE, args;
+					sWorld ->SendGlobalText(msg, NULL);
+			}
+};
+
+void AddSC_world_chat()
+{
+	new world_chat;
+}
+
