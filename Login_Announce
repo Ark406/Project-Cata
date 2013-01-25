@@ -1,0 +1,35 @@
+#include "ScriptPCH.h"
+
+class login_announce : public PlayerScript
+{
+   public:
+     login_announce() : PlayerScript("login_announce") 
+     {
+     }
+      void OnLogin(Player *player) 
+     {
+         if( !player || !player->GetSession() )
+  	       return;
+
+  	   char msg[41] = { NULL };
+  	   switch(player->GetSession()->GetSecurity())
+  	   {
+  	       case SEC_PLAYER:
+  			   snprintf(msg, 40, "[|cffff6060Player]: %s has logged in!", player->GetName());
+  			   break;
+
+  		   case SEC_GAMEMASTER:
+  			   snprintf(msg, 40, "[|cffff6060GM]: %s has logged in!", player->GetName());
+  			   break;
+  	   }
+  	   sWorld->SendGlobalText(msg, NULL);
+     }
+
+
+
+};
+
+void AddSC_login_announce()
+{
+  new login_announce;
+}
